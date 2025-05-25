@@ -42,10 +42,10 @@ class Airport:
         if weather_effect == "delays" or random.random() < 0.1:  # 10% chance of random delay
             delay = random.randint(10, 60)
             plane.apply_delay(delay)
-            self.logs.append(f"{plane.flight_number} delayed by {delay} minutes due to {weather_effect or 'random event'} at {datetime.datetime.now()}")
+            self.logs.append(f"{plane.flight_number} delayed by {delay} minutes because of  {weather_effect or 'random event'} on {datetime.datetime.now()}")
             self.schedule_arrival(plane)
             self.score -= 5
-            self.reputation = max(0, self.reputation - 2)  # Decrease reputation
+            self.reputation = max(0, self.reputation - 5)  # Decrease reputation
             return
         available_runways = [r for r in self.runways if r.status == "available" and (self.weather.condition != "foggy" or r.number < len(self.runways) // 2)]
         for runway in available_runways:
@@ -54,35 +54,40 @@ class Airport:
                 plane.land()
                 self.logs.append(f"{plane.flight_number} landed on Runway {runway.number} at {datetime.datetime.now()}")
                 self.score += 10
-                self.reputation = min(100, self.reputation + 1)  # Increase reputation
+                self.reputation = min(100, self.reputation + 1)
                 break
         else:
             self.logs.append(f"No runway available for {plane.flight_number} at {datetime.datetime.now()}")
             self.score -= 5
-            self.reputation = max(0, self.reputation - 2)  # Decrease reputation
+            self.reputation = max(0, self.reputation - 2)
 
+    # Depart a plane
     def handle_departure(self, plane):
         if plane.status != "at gate":
             return
+        # Check for available runway.
         for runway in self.runways:
             runway.update_status()
             if runway.assign_plane(plane):
                 plane.depart()
-                self.logs.append(f"{plane.flight_number} departed from Runway {runway.number} at {datetime.datetime.now()}")
+                self.logs.append(f"{plane.flight_number} depart from Runway {runway.number} on {datetime.datetime.now()}")
                 self.score += 10
                 self.reputation = min(100, self.reputation + 1)  # Increase reputation
                 break
+        # If runway not available
         else:
-            self.logs.append(f"No runway for {plane.flight_number} departure at {datetime.datetime.now()}")
+            self.logs.append(f"No runway for {plane.flight_number} departure on {datetime.datetime.now()}")
             self.score -= 5
             self.reputation = max(0, self.reputation - 2)  # Decrease reputation
 
+    # Schedule an emergency flight.
     def schedule_emergency(self):
         flight_number = f"EM{random.randint(100, 999)}"
-        plane = Plane(flight_number, datetime.datetime.now() + datetime.timedelta(minutes=random.randint(5, 15)), plane_type="small")
+        plane = Plane(flight_number, datetime.datetime.now() + datetime.timedelta(minutes=random.randint(5, 15)), plane_type="compact")
         self.schedule_arrival(plane)
         self.logs.append(f"Emergency flight {flight_number} scheduled at {datetime.datetime.now()}")
 
+    # Current situtation of airport and stats.
     def get_status(self):
         status = {
             "runways": [(r.number, r.status) for r in self.runways],
@@ -93,11 +98,14 @@ class Airport:
         }
         return status
 
+    # Reputation check for airport
     def check_loss_condition(self):
         if self.reputation < 30:
             return True
         return False
 
+# Parse the time input to convert to correct date and time.
+# Use the parse library.
 def parse_datetime_input(dt_str, default_date=None):
     try:
         if len(dt_str.strip().split()) == 1 and dt_str.count(":") == 1:

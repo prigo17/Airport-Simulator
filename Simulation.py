@@ -10,18 +10,19 @@ class Simulation:
         self.current_time = datetime.datetime.now()
         self.simulation_end_time = self.current_time + datetime.timedelta(hours=simulation_hours)
         self.running = True
-        self.generate_base_schedule()
+        self.generate_initial_flights()
 
-    def generate_base_schedule(self):
-        # Generate a base schedule of flights for the day
-        for i in range(10):  # Schedule 10 flights throughout the day
-            flight_number = f"BASE{i+1}"
+    # Starting flight init
+    def generate_initial_flights(self):
+        for i in range(10):
+            flight_number = f"Base{i+1}"
             arrival_time = self.current_time + datetime.timedelta(minutes=random.randint(30, 1440))
-            plane_type = random.choice(["standard", "large", "small"])
+            plane_type = random.choice(["standard", "jumbo", "compact"])
             plane = Plane(flight_number, arrival_time, plane_type)
             self.airport.schedule_arrival(plane)
-            print(f"Base flight {flight_number} scheduled for {arrival_time}")
+            print(f"FLight {flight_number} scheduled at {arrival_time}")
 
+    # Move ahead in time.
     def advance_time(self, minutes):
         end_time = self.current_time + datetime.timedelta(minutes=minutes)
         while not self.airport.event_queue.empty() and self.running:
@@ -32,8 +33,12 @@ class Simulation:
             self.current_time = event.time
             event.action()
             print(f"Event: {event.description} at {self.current_time}")
-            if random.random() < 0.05:  # 5% chance of emergency per event
+
+            # 20% chance of emergency per event
+            if random.random() < 0.2:
                 self.airport.schedule_emergency()
+
+            # Check repuation if below 30%
             if self.airport.check_loss_condition():
                 print("Reputation has dropped below 30%. Simulation lost!")
                 self.running = False
@@ -42,13 +47,15 @@ class Simulation:
         if self.current_time >= self.simulation_end_time and self.running:
             self.check_win_condition()
 
+    # Check if player vins the game
     def check_win_condition(self):
         if self.airport.reputation >= 70:
             print(f"Simulation ended successfully with reputation {self.airport.reputation}%! You win!")
         else:
-            print(f"Simulation ended with reputation {self.airport.reputation}%. You did not meet the win condition.")
+            print(f"Simulation ended with reputation {self.airport.reputation}%. You lose :(.")
         self.running = False
 
+    # Print the game status.
     def view_status(self):
         status = self.airport.get_status()
         time_remaining = (self.simulation_end_time - self.current_time).total_seconds() / 3600
@@ -65,19 +72,22 @@ class Simulation:
         for flight, stat, runway in status["planes"]:
             print(f"  Flight {flight}: {stat}, Runway: {runway if runway is not None else 'None'}")
 
+    # Print the airport ligs
     def view_logs(self):
         print("\n--- Event Logs ---")
         for log in self.airport.logs[-10:]:
             print(log)
 
+    # Add the runway for maintenance.
     def schedule_maintenance(self):
         try:
-            runway_number = int(input("Enter runway number for maintenance: "))
-            duration = int(input("Enter maintenance duration in minutes: "))
-            self.airport.schedule_maintenance(runway_number, duration)
+            rn = int(input("Enter runway number for maintenance: "))
+            total_time = int(input("Enter maintenance duration in minutes: "))
+            self.airport.schedule_maintenance(rn, total_time)
         except ValueError:
             print("Invalid input!")
 
+    # Main simulation trun
     def run(self):
         print("Welcome to Airport Simulator!")
         print("Manage your airport for 24 hours to maintain a high reputation and achieve the win condition!")
@@ -103,8 +113,8 @@ class Simulation:
             elif choice == "3":
                 flight_number = input("Enter flight number: ")
                 arrival_time_str = input("Enter arrival time (e.g. '15:30', '2025-05-24 15:30'): ")
-                plane_type = input("Enter plane type (standard, large, small): ").lower()
-                if plane_type not in ["standard", "large", "small"]:
+                plane_type = input("Enter plane type (standard, jumbo, compact): ").lower()
+                if plane_type not in ["standard", "jumbo", "compact"]:
                     plane_type = "standard"
                 try:
                     arrival_time = parse_datetime_input(arrival_time_str)
