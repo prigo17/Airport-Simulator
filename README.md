@@ -20,7 +20,7 @@ Airport Simulator is a text-based Python game where you manage an airport over a
 
 ## Setup
 
-1. Download or clone the `AirportSimulator.py` file.
+1. Download or clone all the files.
 2. Install the required package:
 
    ```bash
